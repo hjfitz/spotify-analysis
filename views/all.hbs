@@ -1,0 +1,47 @@
+<label for="person-select">Select a person</label>
+<select name="person-select" id="person-select">
+{{#each users}}
+<option value="{{this.name}}">{{this.name}}</option>
+{{/each}}
+</select>
+
+<div id="output"></div>
+
+<script>
+	const sel = document.getElementById('person-select')
+	const out = document.getElementById('output')
+
+	function create(elems, header, type) {
+		console.log(elems)
+		const h2 = document.createElement('h2')
+		h2.textContent = `Top ${elems.length} ${header} Term ${type}`
+		const list = document.createElement('ol')
+		elems.forEach((elem) => {
+			const li = document.createElement('li')
+			const a = document.createElement('a')
+			a.href = elem.url
+			a.textContent = elem.name
+			li.appendChild(a)
+			list.appendChild(li)
+		})
+		out.appendChild(h2)
+		out.appendChild(list)
+	}
+
+	sel.addEventListener('change', async (ev) => {
+		out.innerHTML = ''
+		const { value } = ev.target
+		const [details] = await fetch(`/${encodeURIComponent(value)}`).then(r => r.json(), { credential: 'include' })
+		console.log(details.tracks)
+		create(details.tracks.long, 'Long', 'Tracks')
+		create(details.tracks.med, 'Medium', 'Tracks')
+		create(details.tracks.short, 'Short', 'Tracks')
+
+		
+		create(details.artists.long, 'Long', 'Artists')
+		create(details.artists.med, 'Medium', 'Artists')
+		create(details.artists.short, 'Short', 'Artists')
+
+
+	})
+</script>

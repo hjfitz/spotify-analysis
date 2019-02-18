@@ -15,7 +15,10 @@ mongoose.connection.once('open', () => {
 
 // forgive me father for I have sinned
 const userSchema = new Schema({
-  displayname: String,
+  displayname: {
+    type: String,
+    unique: true,
+  },
   tracks: Object,
   artists: Object,
 });
@@ -67,12 +70,30 @@ router.get('/', async (req, res) => {
     };
     console.log(`>parsed for ${userInfo.display_name}`);
     const newUser = new User(userProps);
+    const exists = await User.find({ displayname: userInfo.display_name });
+    if (exists.length) {
+      await User.deleteMany({ displayname: userInfo.display_name });
+    }
     await newUser.save();
+
     return res.render('info', { title: userInfo.display_name, userProps });
   }
   return res.render('index', { title: 'Spotify Analyser' });
 });
 
+
+router.get('/all', async (req, res) => {
+  if (!req.session.at) return res.redirect('/login');
+  const users = (await User.find({})).map(user => ({
+    name: user.displayname,
+  }));
+  res.render('all', { users });
+});
+
+router.get('/user', async (req, res) => {
+  const users = await User.deleteMany({});
+  res.json(200);
+});
 
 router.get('/callback', async (req, res) => {
   const base = 'https://accounts.spotify.com/api/token';
@@ -111,6 +132,7 @@ router.get('/login', (req, res) => {
 });
 
 router.get('/:display_name', async (req, res) => {
+  if (!req.session.at) return res.redirect('/login');
   const user = await User.find({ displayname: decodeURIComponent(req.params.display_name) });
   res.json(user);
 });
