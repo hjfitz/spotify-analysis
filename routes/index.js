@@ -92,12 +92,7 @@ router.get('/all', async (req, res) => {
   const users = (await User.find({})).map(user => ({
     name: user.displayname,
   }));
-  res.render('all', { users });
-});
-
-router.get('/user', async (req, res) => {
-  const users = await User.deleteMany({});
-  res.json(200);
+  return res.render('all', { users });
 });
 
 router.get('/callback', async (req, res) => {
@@ -139,7 +134,7 @@ router.get('/login', (req, res) => {
 router.get('/:display_name', async (req, res) => {
   if (!req.session.at) return res.redirect('/login');
   const user = await User.find({ displayname: decodeURIComponent(req.params.display_name) });
-  res.json(user);
+  return res.json(user);
 });
 
 
