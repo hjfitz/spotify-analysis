@@ -23,7 +23,10 @@ const userSchema = new Schema({
 const User = mongoose.model('User', userSchema);
 
 const fetchJson = token => url => fetch(url, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-const format = resp => resp.items.map(item => ({ name: item.name, url: item.external_urls.spotify }));
+const format = resp => resp.items.map(item => ({
+  name: item.name,
+  url: item.external_urls.spotify,
+}));
 /* GET home page. */
 router.get('/', async (req, res) => {
   const get = fetchJson(req.session.at);
@@ -40,7 +43,15 @@ router.get('/', async (req, res) => {
       'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=medium_term',
       'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=long_term',
     ];
-    const [userInfo, artistsShort, artistsMed, artistsLon, tracksShort, tracksMed, tracksLon] = await Promise.all(urls.map(get));
+    const [
+      userInfo,
+      artistsShort,
+      artistsMed,
+      artistsLon,
+      tracksShort,
+      tracksMed,
+      tracksLon,
+    ] = await Promise.all(urls.map(get));
     const userProps = {
       displayname: userInfo.display_name,
       tracks: {
@@ -59,12 +70,11 @@ router.get('/', async (req, res) => {
     await newUser.save();
     return res.render('info', { title: userInfo.display_name, userProps });
   }
-  res.render('index', { title: 'Express' });
+  return res.render('index', { title: 'Spotify Analyser' });
 });
 
 
 router.get('/callback', async (req, res) => {
-  const { code, state } = req.query;
   const base = 'https://accounts.spotify.com/api/token';
   const body = queryString.stringify({
     code: req.query.code,
@@ -85,8 +95,8 @@ router.get('/callback', async (req, res) => {
   };
   // send body to google and wait for AT/ID Token
   const resp = await request(opts);
-  const { access_token, id_token } = JSON.parse(resp);
-  req.session.at = access_token;
+  const { access_token: at } = JSON.parse(resp);
+  req.session.at = at;
   res.redirect('/');
 });
 
