@@ -1,0 +1,49 @@
+<h1>{{title}}</h1>
+<p>{{title}}'s details</p>
+
+<h2>Top 10 Long Term Tracks</h2>
+<ol>
+{{#each userProps.tracks.long}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
+
+<h2>Top 10 Medium Term Tracks</h2>
+<ol>
+{{#each userProps.tracks.med}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
+
+<h2>Top 10 Short Term Tracks</h2>
+<ol>
+{{#each userProps.tracks.short}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
+
+
+
+
+
+
+<h2>Top 10 Long Term Artists</h2>
+<ol>
+{{#each userProps.artists.long}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
+
+<h2>Top 10 Medium Term Artists</h2>
+<ol>
+{{#each userProps.artists.med}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
+
+<h2>Top 10 Short Term Artists</h2>
+<ol>
+{{#each userProps.artists.short}}
+	<li><a href={{this.url}}>{{this.name}}</a></li>
+{{/each}}
+</ol>
