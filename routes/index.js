@@ -30,6 +30,11 @@ const format = resp => resp.items.map(item => ({
   name: item.name,
   url: item.external_urls.spotify,
 }));
+
+const formatTrack = resp => resp.items.map(item => ({
+  name: `${item.name} - ${item.artists[0].name}`,
+  url: item.external_urls.spotify,
+}));
 /* GET home page. */
 router.get('/', async (req, res) => {
   const get = fetchJson(req.session.at);
@@ -58,9 +63,9 @@ router.get('/', async (req, res) => {
     const userProps = {
       displayname: userInfo.display_name,
       tracks: {
-        long: format(tracksLon),
-        med: format(tracksMed),
-        short: format(tracksShort),
+        long: formatTrack(tracksLon),
+        med: formatTrack(tracksMed),
+        short: formatTrack(tracksShort),
       },
       artists: {
         long: format(artistsLon),
