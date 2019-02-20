@@ -7,7 +7,9 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const router = express.Router();
 
-mongoose.connect('mongodb://localhost/test');
+console.log(process.env.MONGO_INITDB_ROOT_USERNAME);
+mongoose.connect('mongodb://mongo:27017');
+
 
 mongoose.connection.once('open', () => {
   console.log('*hacker voice* were in');
