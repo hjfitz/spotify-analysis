@@ -1,15 +1,14 @@
 const express = require('express');
 const queryString = require('querystring');
 const request = require('request-promise');
-const fetch = require('node-fetch');
 const mongoose = require('mongoose');
+const { callbackUrl, createAPIUrls } = require('./spotify-urls');
+const { fetchJson, format } = require('./util');
 
 const { Schema } = mongoose;
 const router = express.Router();
 
-console.log(process.env.MONGO_INITDB_ROOT_USERNAME);
-mongoose.connect('mongodb://mongo:27017');
-
+mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
 
 mongoose.connection.once('open', () => {
   console.log('*hacker voice* were in');
@@ -27,73 +26,53 @@ const userSchema = new Schema({
 
 const User = mongoose.model('User', userSchema);
 
-const fetchJson = token => url => fetch(url, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-const format = resp => resp.items.map(item => ({
-  name: item.name,
-  url: item.external_urls.spotify,
-}));
 
-const formatTrack = resp => resp.items.map(item => ({
-  name: `${item.name} - ${item.artists[0].name}`,
-  url: item.external_urls.spotify,
-}));
 /* GET home page. */
 router.get('/', async (req, res) => {
   const get = fetchJson(req.session.at);
   // console.log(req.session);
   if (req.session.at) {
-    const urls = [
-      'https://api.spotify.com/v1/me',
-
-      'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=short_term',
-      'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=medium_term',
-      'https://api.spotify.com/v1/me/top/artists?limit=50&time_range=long_term',
-
-      'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=short_term',
-      'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=medium_term',
-      'https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=long_term',
-    ];
-    const [
-      userInfo,
-      artistsShort,
-      artistsMed,
-      artistsLon,
-      tracksShort,
-      tracksMed,
-      tracksLon,
-    ] = await Promise.all(urls.map(get));
-    const userProps = {
-      displayname: userInfo.display_name,
-      tracks: {
-        long: formatTrack(tracksLon),
-        med: formatTrack(tracksMed),
-        short: formatTrack(tracksShort),
-      },
-      artists: {
-        long: format(artistsLon),
-        med: format(artistsMed),
-        short: format(artistsShort),
-      },
-    };
-    console.log(`>parsed for ${userInfo.display_name}`);
-    const newUser = new User(userProps);
+    const userInfo = await get('https://api.spotify.com/v1/me');
     const exists = await User.find({ displayname: userInfo.display_name });
     if (exists.length) {
+      res.render('info', { title: exists[0].displayname, userProps: exists[0] });
       await User.deleteMany({ displayname: userInfo.display_name });
+    } else {
+      const urls = createAPIUrls(50);
+      const [
+        artistsShort,
+        artistsMed,
+        artistsLon,
+        tracksShort,
+        tracksMed,
+        tracksLon,
+      ] = await Promise.all(urls.map(get));
+      const userProps = {
+        displayname: userInfo.display_name,
+        tracks: {
+          long: format.track(tracksLon),
+          med: format.track(tracksMed),
+          short: format.track(tracksShort),
+        },
+        artists: {
+          long: format.artist(artistsLon),
+          med: format.artist(artistsMed),
+          short: format.artist(artistsShort),
+        },
+      };
+      console.log(`>parsed for ${userInfo.display_name}`);
+      const newUser = new User(userProps);
+      await newUser.save();
+      return res.render('info', { title: userInfo.display_name, userProps });
     }
-    await newUser.save();
-
-    return res.render('info', { title: userInfo.display_name, userProps });
   }
-  return res.render('index', { title: 'Spotify Analyser' });
+  return res.render('index', { title: 'Spotify Analyser', callbackUrl });
 });
 
 
 router.get('/all', async (req, res) => {
-  if (!req.session.at) return res.redirect('/login');
-  const users = (await User.find({})).map(user => ({
-    name: user.displayname,
-  }));
+  if (!req.session.at) return res.redirect(callbackUrl);
+  const users = await User.find({});
   return res.render('all', { users });
 });
 
@@ -119,22 +98,14 @@ router.get('/callback', async (req, res) => {
   // send body to google and wait for AT/ID Token
   const resp = await request(opts);
   const { access_token: at } = JSON.parse(resp);
+  console.log(JSON.parse(resp));
   req.session.at = at;
   res.redirect('/');
 });
 
-router.get('/login', (req, res) => {
-  const scopes = 'user-read-private user-read-email user-top-read';
-  const url = 'https://accounts.spotify.com/authorize'
-  + '?response_type=code'
-  + `&client_id=${process.env.SPOTIFY_CLIENT_ID}`
-  + `&scope=${encodeURIComponent(scopes)}`
-  + `&redirect_uri=${encodeURIComponent(process.env.SPOTIFY_CALLBACK_URL)}`;
-  res.redirect(url);
-});
 
 router.get('/:display_name', async (req, res) => {
-  if (!req.session.at) return res.redirect('/login');
+  if (!req.session.at) return res.redirect(callbackUrl);
   const user = await User.find({ displayname: decodeURIComponent(req.params.display_name) });
   return res.json(user);
 });

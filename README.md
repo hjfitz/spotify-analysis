@@ -1,17 +1,19 @@
 ## Spotify Analysis
 
 ## Prerequisites
-1. Mongo
-2. Node >=10
-3. yarn
+* Docker
 
+if not docker:
+* Node 10
+* yarn
+* mongo
 ## Running
-1. clone: `git clone https://github.com/hjfitz/spotify-analysis`
-2. get a client id/secret from github here: https://developer.spotify.com/dashboard/applications
-3. copy .env-sample to .env and update the details accordingly
-4. install deps: `yarn`
-5. run! `yarn start`
-
+* clone: `git clone https://github.com/hjfitz/spotify-analysis`
+* get a client id/secret from spotify here: https://developer.spotify.com/dashboard/applications
+* copy .env-sample to .env and update the details accordingly
+* run! `docker-compose up`
+**or if not using docker:**
+* Instal dependencies and run! `yarn && yarn start`
 ### .env
 * `SPOTIFY_CLIENT_ID`: Client ID from Spotify
 * `SPOTIFY_CLIENT_SECRET`: Client secret from Spotify

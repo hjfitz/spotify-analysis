@@ -6,17 +6,16 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const session = require('express-session');
 
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 const app = express();
 
-
-const MemoryStore = require('memorystore')(session);
-
 app.use(session({
-  store: new MemoryStore({
-    checkPeriod: 86400000, // prune expired entries every 24h
+  store: new MongoDBStore({
+    uri: process.env.DATABASE_URL,
+    collection: 'mySessions',
   }),
-  secret: 'keyboard cat',
+  secret: 'supersecretbetternotpushthistogithub!!!!',
 }));
 
 const envLoc = path.join(process.cwd(), '.env');
